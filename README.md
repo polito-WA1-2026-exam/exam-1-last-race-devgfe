@@ -1,32 +1,113 @@
-# Exam #N: "Exam Title"
-## Student: s123456 LASTNAME FIRSTNAME 
+# Exam #1: "Last Race"
+> Student: s358479 Ferrero Gabriele 
 
-## React Client Application Routes
+## Table of Contents
+- [1. Server-side](#1-server-side)
+  - [API List](#api-list)
+  - [Server Architecture](#server-architecture)
+  - [Database Tables](#database-tables)
+- [2. Client-side](#2-client-side)
+  - [React Routes](#react-routes)
+  - [Main React Components](#main-react-components)
+- [3. Overall](#3-overall)
+  - [Screenshots](#screenshots)
+  - [Users Credentials](#users-credentials)
+  - [Use of AI Tools](#use-of-ai-tools)
+
+---
+
+## 1. Server-side
+
+### API List
+
+The complete list of backend APIs can be explored by visiting [Swagger UI](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/polito-WA1-2026-exam/exam-1-last-race-devgfe/refs/heads/main/doc/swagger.yaml).
+
+### Server Architecture
+
+```mermaid
+flowchart TD
+    Client([Client React App])
+    
+    subgraph Server [Backend Server]
+        subgraph Interface [Interface Layer]
+            Router[Express Router]
+            DTO[DTO]
+        end
+
+        subgraph Logic [Application Logic Layer]
+            Controller[Controller]
+            Service[Service]
+        end
+
+        subgraph Data [Data Layer]
+            DAO[DAO]
+            Repo[Repository]
+        end
+        
+        Database[(SQLite Database)]
+    end
+
+    %% Connections
+    Client <== "HTTP (JSON)" ==> Router
+    Router <--> DTO
+    Router --> Controller
+    Controller <--> Service
+    Controller --> DAO
+    Controller --> Repo
+    Repo <== "sqlite3" ==> Database
+```
+
+### Database Tables
+
+```mermaid
+erDiagram
+    station ||--o{ segment : "is endpoint A of"
+    station ||--o{ segment : "is endpoint B of"
+    line ||--|{ segment : "belongs to"
+
+    event {
+        int id PK
+        string name
+        string description
+        int effect
+    }
+    user {
+        int id PK
+        string name
+        string email
+        string password
+        string salt
+        int best_result
+    }
+    station {
+        string name PK
+    }
+    line {
+        string name PK
+        string color
+    }
+    segment {
+        string station_a_name PK, FK
+        string station_b_name PK, FK
+        string line_name PK, FK
+    }
+```
+
+- `event`: Defines the unexpected situations that players encounter during their journey, modifying their final coin balance.
+- `user`: Manages registered players, handling their authentication state and tracking their highest score for the global ranking.
+- `station`: Represents the physical stops within the underground network.
+- `line`: Represents the distinct metro routes that group and connect the various stations.
+- `segment`: Defines the topology of the map, representing valid bidirectional links between adjacent stations on a specific line.
+
+## 2. Client-side
+
+### React Routes
 
 - Route `/`: page content and purpose
 - Route `/something/:param`: page content and purpose, param specification
 - ...
 
-## API Server
-
-- POST `/api/something`
-  - request parameters and request body content
-  - response body content
-- GET `/api/something`
-  - request parameters
-  - response body content
-- POST `/api/something`
-  - request parameters and request body content
-  - response body content
-- ...
-
-## Database Tables
-
-- Table `users` - contains xx yy zz
-- Table `something` - contains ww qq ss
-- ...
-
-## Main React Components
+### Main React Components
 
 - `ListOfSomething` (in `List.js`): component purpose and main functionality
 - `GreatButton` (in `GreatButton.js`): component purpose and main functionality
@@ -34,15 +115,20 @@
 
 (only _main_ components, minor ones may be skipped)
 
-## Screenshot
+## 3. Overall
 
-![Screenshot](./img/screenshot.jpg)
+### Screenshots
 
-## Users Credentials
+![Screenshot1](./img/screenshot1.jpg)
 
-- username, password (plus any other requested info)
-- username, password (plus any other requested info)
+![Screenshot2](./img/screenshot2.jpg)
 
-## Use of AI Tools
+### Users Credentials
+
+- **User 1:** email: `mario@test.com`, password: `password` (Played some games)
+- **User 2:** email: `luigi@test.com`, password: `password` (Played some games)
+- **User 3:** email: `lucia@test.com`, password: `password` (No games played yet)
+
+### Use of AI Tools
 Briefly describe whether you used any AI tools (e.g., ChatGPT, GitHub Copilot, Claude) while working on this project, for which purposes (e.g., clarifying concepts, debugging, generating code), and how you verified or adapted their output.
 If you did not use any AI tools, simply state so.
