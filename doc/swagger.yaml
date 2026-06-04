@@ -14,7 +14,7 @@ tags:
   - name: auth
     description: User session and login operations
   - name: game
-    description: Core game logic
+    description: Game logic
   - name: data
     description: Static game data
 
@@ -70,7 +70,7 @@ components:
           example: "Kind passenger"
         description:
           type: string
-          example: "A kind passenger offers you a coin."
+          example: "Kind passenger, +1 coin"
         effect:
           type: integer
           description: A positive or negative integer from -4 to +4.
@@ -96,20 +96,18 @@ components:
           description: Hex color code representing the line on the map.
           example: "#ff0000"
 
-    Network:
+    Subnetwork:
       type: object
       description: |
         Represents the adjacency matrix of a single metro line (identified by `line_id`).
-        The matrix has dimension N×N, where N is the total number of stations in the network.
-        Each cell adj_matrix[i][j] is indexed by station ID (row = station i, col = station j).
-
-        **Base meaning** (used in GET /map and POST /game/execution request):
-        - 1  → the segment between station i and station j exists on this line (or is part of the submitted route).
-        - -1 → no segment between station i and station j on this line (or not part of the route).
-
-        **Event result meaning** (used in POST /game/execution response):
-        - event ID → the ID of the event applied to the segment from station i to station j.
-        - -1 → the segment was not traversed.
+        The matrix has dimension N×N, where N is the total number of stations in the entire underground network.
+        Each cell adj_matrix[i][j] is indexed by station ID (row = station i, col = station j) and has a precise meaning based on the context:
+        - **Base meaning** (used in GET /map and POST /game/execution request):
+          - 1  → the segment between station i and station j exists on this line (or is part of the submitted route).
+          - -1 → no segment between station i and station j on this line (or not part of the route).
+        - **Event meaning** (used in POST /game/execution response):
+          - event ID → the ID of the event applied to the segment from station i to station j.
+          - -1 → the segment was not traversed.
 
         Stations, lines, and events are retrieved independently via GET /stations, GET /line, and GET /events.
       required:
@@ -142,7 +140,7 @@ components:
           type: integer
           example: 24
 
-    MissionEndpoints:
+    Endpoints:
       type: object
       description: The randomly assigned departure and arrival stations for the current game mission, returned in the planning phase.
       required:
@@ -251,10 +249,7 @@ paths:
         - data
       summary: Get the underground network map
       description: |
-        Returns the full underground network as an array of `Network` objects, one per metro line.
-        Each `Network` contains the `line_id` and an adjacency matrix where each cell adj_matrix[i][j] is
-        1 if a direct segment exists between station i and station j on that line, or -1 if not.
-        Stations and lines are retrieved independently via GET /stations and GET /line.
+        Returns the full underground network as an array of `Subnetwork` objects, one per metro line.
       responses:
         '200':
           description: Map retrieved successfully
@@ -263,7 +258,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Network'
+                  $ref: '#/components/schemas/Subnetwork'
               example:
                 - line_id: 1
                   adj_matrix:
@@ -376,7 +371,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MissionEndpoints'
+                $ref: '#/components/schemas/Endpoints'
         '401':
           description: Unauthorized
           content:
@@ -396,13 +391,8 @@ paths:
       description: |
         Validates the submitted route, applies random events to each segment, calculates the final score, and updates the user's best result.
 
-        **Request body**: an array of `Network` objects, one per metro line involved in the route.
-        Each `Network` contains the `line_id` and an adjacency matrix where each cell adj_matrix[i][j] is
-        1 if the segment from station i to station j (on that line) is part of the submitted route, or -1 otherwise.
-
-        **Response**: an array of `Network` objects with the same structure.
-        Each cell adj_matrix[i][j] contains the ID of the event applied to that segment, or -1 if the segment was not traversed.
-        Events are retrieved separately via GET /events; lines via GET /line.
+        - **Request body**: an array of `Subnetwork` objects, one per metro line involved in the route.
+        - **Response**: an array of `Subnetwork` objects with the same structure.
       requestBody:
         required: true
         content:
@@ -410,7 +400,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/Network'
+                $ref: '#/components/schemas/Subnetwork'
             example:
               - line_id: 1
                 adj_matrix:
@@ -424,13 +414,13 @@ paths:
                   - [-1,  1, -1]
       responses:
         '200':
-          description: Route executed successfully. Returns an array of Networks annotated with the IDs of the applied events.
+          description: Route executed successfully. Returns an array of Subnetworks annotated with the IDs of the applied events.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Network'
+                  $ref: '#/components/schemas/Subnetwork'
               example:
                 - line_id: 1
                   adj_matrix:

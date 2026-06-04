@@ -135,7 +135,7 @@ erDiagram
 
 ### Data Models
 
-#### Network
+#### Subnetwork
 
 ```js
 
@@ -160,6 +160,12 @@ erDiagram
 ```
 
 #### User
+
+```js
+
+```
+
+#### RankingEntry
 
 ```js
 
