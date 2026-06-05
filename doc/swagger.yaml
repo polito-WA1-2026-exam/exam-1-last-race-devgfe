@@ -46,15 +46,15 @@ components:
           example: 1
         name:
           type: string
-          example: "Centrale"
+          example: "Centrale Fs"
         latitude:
           type: number
           format: float
-          example: 45.4654
+          example: 45.48480550073354
         longitude:
           type: number
           format: float
-          example: 9.1895
+          example: 9.202730068822738
 
     Event:
       type: object
@@ -100,44 +100,11 @@ components:
           description: Hex color code representing the line on the map.
           example: "#ff0000"
 
-    Subnetwork:
-      type: object
-      description: |
-        Represents the adjacency structure of a single metro line.
-
-        - `stations`: array of station IDs belonging to this line. The position of each ID in this array defines its index in `adj_matrix`.
-        - `adj_matrix`: square matrix of dimension M×M, where M = `stations.length`. `adj_matrix[i][j]` indicates whether station `stations[i]` and station `stations[j]` are directly connected on this line:
-          - `1` → segment exists.
-          - `0` → no direct segment.
-      required:
-        - line_id
-        - stations
-        - adj_matrix
-      properties:
-        line_id:
-          type: integer
-          description: The ID of the metro line this subnetwork represents.
-          example: 2
-        stations:
-          type: array
-          items:
-            type: integer
-          description: Array of station IDs in this line.
-          example: [3, 5, 7, 9]
-        adj_matrix:
-          type: array
-          items:
-            type: array
-            items:
-              type: integer
-              enum: [0, 1]
-          description: Square adjacency matrix.
-
     Segment:
       type: object
       description: |
-        A single traversed segment of the route, connecting two adjacent stations on a specific line.
-        `event_id` is present only in execution responses, where it indicates the event applied to this segment.
+        A directional connection from one station to an adjacent station on a specific metro line.
+        Station details can be retrieved via `GET /metro/stations` and line details via `GET /metro/lines`.
       required:
         - from_station_id
         - to_station_id
@@ -155,11 +122,10 @@ components:
           type: integer
           description: ID of the metro line used for this segment.
           example: 2
-        event_id:
-          type: integer
+        event:
           nullable: true
-          description: ID of the event applied to this segment. Present only in execution responses.
-          example: 7
+          allOf:
+            - $ref: '#/components/schemas/Event'
 
     RankingEntry:
       type: object
@@ -173,11 +139,11 @@ components:
           example: "Mario Rossi"
         best_result:
           type: integer
-          example: 24
+          example: 6
 
     Endpoints:
       type: object
-      description: The randomly assigned departure and arrival stations for the current game mission, returned in the planning phase.
+      description: The randomly assigned departure and arrival stations for the current game mission.
       required:
         - departure_station_id
         - arrival_station_id
@@ -222,6 +188,10 @@ components:
         email:
           type: string
           example: "mario@test.com"
+        best_score:
+          type: integer
+          nullable: true
+          example: 6
 
     ErrorResponse:
       type: object
@@ -275,16 +245,16 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
-  /metro/map:
+  /metro/segments:
     get:
       tags:
         - metro
       summary: Get the underground network map
       description: |
-        Returns the full underground network as an array of `Subnetwork` objects, one per metro line.
+        Returns the full underground network as a list of `Segment` objects, representing all existing connections between adjacent stations across all metro lines.
       responses:
         '200':
           description: Map retrieved successfully
@@ -293,21 +263,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Subnetwork'
+                  $ref: '#/components/schemas/Segment'
               example:
-                - line_id: 1
-                  stations: [1, 2, 3]
-                  adj_matrix:
-                    - [0, 1, 0]
-                    - [1, 0, 1]
-                    - [0, 1, 0]
-                - line_id: 2
-                  stations: [2, 3, 4, 5]
-                  adj_matrix:
-                    - [0, 0, 1, 0]
-                    - [0, 0, 1, 0]
-                    - [1, 1, 0, 1]
-                    - [0, 0, 1, 0]
+                - from_station_id: 1
+                  to_station_id: 2
+                  line_id: 1
+                - from_station_id: 2
+                  to_station_id: 3
+                  line_id: 1
+                - from_station_id: 2
+                  to_station_id: 4
+                  line_id: 2
         '401':
           description: Unauthorized
           content:
@@ -316,7 +282,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
   /metro/stations:
@@ -342,7 +308,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
   /events:
@@ -368,7 +334,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
   /ranking:
@@ -394,18 +360,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
-  /game/planning/endpoints:
-    get:
+  /games:
+    post:
       tags:
         - game
-      summary: Get a new mission (start/end stations)
-      description: Assigns a random departure and arrival station with a minimum distance of 3 stops.
+      summary: Create a new mission (start/end stations)
+      description: Creates a new game session by randomly assigning a departure and arrival station with a minimum distance of 3 segments.
       responses:
-        '200':
-          description: Mission assigned successfully
+        '201':
+          description: Mission created successfully
           content:
             application/json:
               schema:
@@ -418,19 +384,19 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
-  /game/execution:
+  /games/current/route:
     post:
       tags:
         - game
       summary: Execute the planned route
       description: |
-        Validates the submitted route, applies a random event to each segment, calculates the final score, and updates the user's best result.
+        Validates the submitted route, applies a random event to each segment, calculates the final score, and saves the game record.
 
-        - **Request body**: an array of `Segment` objects representing the planned route.
-        - **Response**: the same array of `Segment` objects, each enriched with the `event_id` of the applied event.
+        - **Request body**: an ordered array of `Segment` objects representing the planned route. The order reflects exactly the sequence of segments as the player chose to build the route (from departure to arrival).
+        - **Response**: the same ordered array of `Segment` objects, each enriched with the full `event` object applied to that segment. The order is preserved from the request.
       requestBody:
         required: true
         content:
@@ -451,7 +417,7 @@ paths:
                 line_id: 2
       responses:
         '200':
-          description: Route executed successfully. Returns the route segments annotated with the applied event IDs.
+          description: Route executed successfully. Returns the route segments each enriched with the applied event object.
           content:
             application/json:
               schema:
@@ -462,15 +428,27 @@ paths:
                 - from_station_id: 1
                   to_station_id: 2
                   line_id: 1
-                  event_id: 3
+                  event:
+                    id: 3
+                    name: "Kind passenger"
+                    description: "Kind passenger, +1 coin"
+                    effect: 1
                 - from_station_id: 2
                   to_station_id: 3
                   line_id: 1
-                  event_id: 7
+                  event:
+                    id: 9
+                    name: "Dirty floor"
+                    description: "Dirty floor, -1 coin"
+                    effect: -1
                 - from_station_id: 3
                   to_station_id: 5
                   line_id: 2
-                  event_id: 2
+                  event:
+                    id: 8
+                    name: "Air conditioning that works"
+                    description: "Air conditioning that works, +2 coins"
+                    effect: 2
         '400':
           description: Invalid route submitted
           content:
@@ -489,7 +467,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
   /session:
@@ -544,7 +522,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"
 
     delete:
@@ -563,5 +541,5 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 code: 401
-                message: "Authorization header missing"
+                message: "Not authenticated"
                 name: "UnauthorizedError"

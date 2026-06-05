@@ -50,6 +50,9 @@ erDiagram
     station ||--o{ segment : "from"
     station ||--o{ segment : "to"
     line ||--|{ segment : "belongs to"
+    user ||--o{ game : "plays"
+    station ||--o{ game : "departure"
+    station ||--o{ game : "arrival"
 
     event {
         int id PK
@@ -63,7 +66,6 @@ erDiagram
         string email
         string password
         string salt
-        int best_result
     }
     station {
         int id PK
@@ -81,13 +83,22 @@ erDiagram
         int to_station_id PK, FK
         int line_id PK, FK
     }
+    game {
+        int id PK
+        int user_id FK
+        int departure_station_id FK
+        int arrival_station_id FK
+        datetime timestamp
+        int score
+    }
 ```
 
 - `event`: Defines the unexpected situations that players encounter during their journey, modifying their final coin balance.
-- `user`: Manages registered players, handling their authentication state and tracking their highest score for the global ranking.
+- `user`: Manages registered players, handling their authentication state.
 - `station`: Represents the physical stops within the underground network, including geographic coordinates for map visualization.
 - `line`: Represents the distinct metro routes that group and connect the various stations.
 - `segment`: Defines the topology of the map, representing valid unidirectional links between adjacent stations on a specific line.
+- `game`: Records each game played by a user.
 
 ## 2. Client-side
 
@@ -99,7 +110,7 @@ erDiagram
 - Route `/game/planning`: Planning phase — 90-second countdown during which the player selects segments to build a route from the assigned start to the destination.
 - Route `/game/execution`: Execution phase — validates the submitted route, then replays each segment step-by-step applying a random event and updating the coin total.
 - Route `/game/result`: Result phase — shows the final coin score and lets the player start a new game.
-- Route `/ranking`: Leaderboard page showing the best score of each registered user; accessible only to authenticated users.
+- Route `/ranking`: Leaderboard page showing the best score of each registered user.
 - Route `/instructions`: Game rules page accessible to all users.
 - Route `*`: Fallback page for non-existing URL paths.
 

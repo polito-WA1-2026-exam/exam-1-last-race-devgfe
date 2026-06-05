@@ -2,7 +2,7 @@
 
 # “Last Race”
 
-## ⚠️ PRELIMINARY VERSION – Leave any questions as COMMENTS and do not delete or resolve any existing comments. The final version will be published on 2026-06-05.
+## ⚠️ FINAL VERSION – The updated parts are highlighted in red.
 
 Design and implement a web application for a single-player game inspired by the board game “Race the Rails”. 
 
@@ -15,7 +15,7 @@ The game is based on an **underground network** consisting of a fixed set of sta
 * Green Line: Porta Velaria \<-\> Fontana Oscura \<-\> Torre Cinerea \<-\> Campo dell'Eco  
 * Yellow Line: Piazza delle Lanterne \<-\> Torre Cinerea \<-\> Viale dei Mosaici \<-\> Campo dell'Eco
 
-The names of the stations and lines, as well as the connections between stations, are left to the student. The underground network must have *at least 4 lines*, *at least 12 stations*, and *at least 3 interchange stations*, that is, stations served by more than one line. The network does not change during the game. 
+The names of the stations and lines, as well as the connections between stations, are left to the student. The underground network must have *at least 4 lines*, *at least 12 stations*, and *at least 3 interchange stations*, that is, stations served by more than one line. Interchange stations cannot be more than half the total number of stations. The network does not change during the game. 
 
 On a probabilistic basis, at least 8 different events may occur during a segment; each event consists of a description and an effect, a positive or negative integer from \-4 to \+4. Students may define the events as they wish. Examples of events may include: “Quiet journey, 0 coins”, “Wrong platform, \-2 coins”, “Kind passenger, \+1 coin”. 
 
@@ -26,14 +26,14 @@ The application allows users to play multiple games. Each game starts with 20 co
 1. **Setup.** The player sees the network map with all stations, their connections, and the lines. When the player is ready to play, they move on to the next phase.  
 2. **Planning.** The player sees three elements on the page:  
    1. the network map, showing only the stations with their names but **without** the lines connecting them;  
-   2. a starting station and a destination station, randomly assigned by the server, where the destination station must be reachable in the network from the starting station with a minimum distance of at least 3 stops between them;  
+   2. a starting station and a destination station, randomly assigned by the server, where the destination station must be reachable in the network from the starting station with a minimum distance of at least 3 ~~stops~~ segments between them (as an example, Centrale \-\> Porta Velaria \-\> Crocevia del Falco \-\> Piazza delle Lanterne counts as 3 segments, involving 4 stops);  
    3. the list of all **segments**, that is, pairs of connected stations, for example, Porta Velaria—Fontana Oscura.
 
-   From the beginning of this phase, the player has 90 seconds to scroll through the list of pairs, mentally reconstruct the network, and build their route by selecting the segments in sequence. The **route** must start from the assigned starting station and end at the assigned destination station.
+   From the beginning of this phase, the player has 90 seconds to scroll through the list of pairs, mentally reconstruct the network, and build their route by selecting the segments in sequence. Each segment may be selected only once. The **route** must start from the assigned starting station and end at the assigned destination station.
 
    Before the 90 seconds expire, the player must submit the route they have built. If time runs out, the planning phase automatically ends with the route built up to that point, even if it is incomplete or invalid.
 
-   A route is **valid** when it starts and ends at the assigned stations and each segment is reachable through one of the lines, with line changes possible only at interchange stations.
+   A route is **valid** when it starts and ends at the assigned stations and each segment is reachable through one of the lines, with line changes possible only at interchange stations. Routes are valid if they involve the same station more than once, but they must not involve any segment more than once.
 
 3. **Execution.** The web application validates the submitted route and, for each segment of the journey, that is, each step from one station to the next, randomly selects one event from those available and applies its effect to the player’s total number of coins. The web application shows the steps one at a time, in sequence, displaying the unexpected event that occurred and the updated coin total.
 
