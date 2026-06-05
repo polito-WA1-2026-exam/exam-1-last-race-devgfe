@@ -10,12 +10,6 @@
   - [React Routes](#react-routes)
   - [Main React Components](#main-react-components)
 - [3. Overall](#3-overall)
-  - [Data Models](#data-models)
-    - [Network](#network)
-    - [Station](#station)
-    - [Line](#line)
-    - [Event](#event)
-    - [User](#user)
   - [Screenshots](#screenshots)
   - [Users Credentials](#users-credentials)
   - [Use of AI Tools](#use-of-ai-tools)
@@ -33,42 +27,28 @@ The complete list of backend APIs can be explored by visiting [Swagger UI](https
 ```mermaid
 flowchart TD
     Client([Client React App])
-    
+
     subgraph Server [Backend Server]
-        subgraph Interface [Presentation Layer]
-            Router[Express Router]
-            DTO[DTO]
-        end
-
-        subgraph Logic [Business Layer]
-            Controller[Controller]
-            Service[Service]
-        end
-
-        subgraph Data [Persistence Layer]
-            DAO[DAO]
-            Repo[Repository]
-        end
-        
-        Database[(Database Layer - SQLite)]
+        Router[Express Router]
+        Controller[Controller]
+        Repo[Repository]
+        Database[(SQLite)]
     end
 
-    %% Connections
-    Client <== "HTTP (JSON)" ==> Router
-    Router --> DTO
-    Router --> Controller
-    Controller --> Service
-    Controller --> Repo
+    Client <== "HTTP JSON" ==> Router
+    Router -- "DTO (validated input)" --> Controller
+    Controller -- "calls" --> Repo
+    Repo -- "DAO" --> Controller
+    Controller -- "DTO (response)" --> Router
     Repo == "sqlite3" ==> Database
-    Repo --> DAO
 ```
 
 ### Database Tables
 
 ```mermaid
 erDiagram
-    station ||--o{ segment : "is endpoint A of"
-    station ||--o{ segment : "is endpoint B of"
+    station ||--o{ segment : "from"
+    station ||--o{ segment : "to"
     line ||--|{ segment : "belongs to"
 
     event {
@@ -97,8 +77,8 @@ erDiagram
         string color
     }
     segment {
-        int station_a_id PK, FK
-        int station_b_id PK, FK
+        int from_station_id PK, FK
+        int to_station_id PK, FK
         int line_id PK, FK
     }
 ```
@@ -107,20 +87,20 @@ erDiagram
 - `user`: Manages registered players, handling their authentication state and tracking their highest score for the global ranking.
 - `station`: Represents the physical stops within the underground network, including geographic coordinates for map visualization.
 - `line`: Represents the distinct metro routes that group and connect the various stations.
-- `segment`: Defines the topology of the map, representing valid bidirectional links between adjacent stations on a specific line.
+- `segment`: Defines the topology of the map, representing valid unidirectional links between adjacent stations on a specific line.
 
 ## 2. Client-side
 
 ### React Routes
 
-- Route `/`: Welcome page with main menu.
-- Route `/login`: User authentication page.
-- Route `/game/setup`: Map view.
-- Route `/game/planning`: Timed route selection.
-- Route `/game/execution`: Live gameplay execution and score calculation.
-- Route `/game/result`: Match summary.
-- Route `/ranking`: Global leaderboard.
-- Route `/instructions`: Game rules.
+- Route `/`: Home page with navigation menu; entry point for both anonymous and registered users.
+- Route `/login`: Login form for registered users.
+- Route `/game/setup`: Setup phase — displays the full network map with all stations, lines, and connections so the player can study the network before starting.
+- Route `/game/planning`: Planning phase — 90-second countdown during which the player selects segments to build a route from the assigned start to the destination.
+- Route `/game/execution`: Execution phase — validates the submitted route, then replays each segment step-by-step applying a random event and updating the coin total.
+- Route `/game/result`: Result phase — shows the final coin score and lets the player start a new game.
+- Route `/ranking`: Leaderboard page showing the best score of each registered user; accessible only to authenticated users.
+- Route `/instructions`: Game rules page accessible to all users.
 - Route `*`: Fallback page for non-existing URL paths.
 
 ### Main React Components
@@ -132,44 +112,6 @@ erDiagram
 (only _main_ components, minor ones may be skipped)
 
 ## 3. Overall
-
-### Data Models
-
-#### Subnetwork
-
-```js
-
-```
-
-#### Station
-
-```js
-
-```
-
-#### Line
-
-```js
-
-```
-
-#### Event
-
-```js
-
-```
-
-#### User
-
-```js
-
-```
-
-#### RankingEntry
-
-```js
-
-```
 
 ### Screenshots
 

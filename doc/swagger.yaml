@@ -12,11 +12,15 @@ security:
   - cookieAuth: []
 tags:
   - name: auth
-    description: User session and login operations
+    description: Authentication and session management
+  - name: metro
+    description: Metro network data — stations, lines and map
+  - name: events
+    description: Game events catalog
+  - name: ranking
+    description: Global ranking
   - name: game
     description: Game logic
-  - name: data
-    description: Static game data
 
 components:
   securitySchemes:
@@ -38,7 +42,7 @@ components:
       properties:
         id:
           type: integer
-          description: Unique numeric identifier, used as the row/column index in adjacency matrices.
+          description: Unique numeric identifier of the station.
           example: 1
         name:
           type: string
@@ -99,32 +103,63 @@ components:
     Subnetwork:
       type: object
       description: |
-        Represents the adjacency matrix of a single metro line (identified by `line_id`).
-        The matrix has dimension N×N, where N is the total number of stations in the entire underground network.
-        Each cell adj_matrix[i][j] is indexed by station ID (row = station i, col = station j) and has a precise meaning based on the context:
-        - **Base meaning** (used in GET /map and POST /game/execution request):
-          - 1  → the segment between station i and station j exists on this line (or is part of the submitted route).
-          - -1 → no segment between station i and station j on this line (or not part of the route).
-        - **Event meaning** (used in POST /game/execution response):
-          - event ID → the ID of the event applied to the segment from station i to station j.
-          - -1 → the segment was not traversed.
+        Represents the adjacency structure of a single metro line.
 
-        Stations, lines, and events are retrieved independently via GET /stations, GET /line, and GET /events.
+        - `stations`: array of station IDs belonging to this line. The position of each ID in this array defines its index in `adj_matrix`.
+        - `adj_matrix`: square matrix of dimension M×M, where M = `stations.length`. `adj_matrix[i][j]` indicates whether station `stations[i]` and station `stations[j]` are directly connected on this line:
+          - `1` → segment exists.
+          - `0` → no direct segment.
       required:
         - line_id
+        - stations
         - adj_matrix
       properties:
         line_id:
           type: integer
-          description: The ID of the metro line this adjacency matrix represents.
+          description: The ID of the metro line this subnetwork represents.
           example: 2
+        stations:
+          type: array
+          items:
+            type: integer
+          description: Array of station IDs in this line.
+          example: [3, 5, 7, 9]
         adj_matrix:
           type: array
           items:
             type: array
             items:
               type: integer
-          description: 2D integer matrix indexed by station ID.
+              enum: [0, 1]
+          description: Square adjacency matrix.
+
+    Segment:
+      type: object
+      description: |
+        A single traversed segment of the route, connecting two adjacent stations on a specific line.
+        `event_id` is present only in execution responses, where it indicates the event applied to this segment.
+      required:
+        - from_station_id
+        - to_station_id
+        - line_id
+      properties:
+        from_station_id:
+          type: integer
+          description: ID of the departure station for this segment.
+          example: 3
+        to_station_id:
+          type: integer
+          description: ID of the arrival station for this segment.
+          example: 5
+        line_id:
+          type: integer
+          description: ID of the metro line used for this segment.
+          example: 2
+        event_id:
+          type: integer
+          nullable: true
+          description: ID of the event applied to this segment. Present only in execution responses.
+          example: 7
 
     RankingEntry:
       type: object
@@ -210,10 +245,10 @@ components:
 
 
 paths:
-  /line:
+  /metro/lines:
     get:
       tags:
-        - data
+        - metro
       summary: Get all metro lines
       description: Returns the list of all metro lines in the underground network.
       responses:
@@ -243,10 +278,10 @@ paths:
                 message: "Authorization header missing"
                 name: "UnauthorizedError"
 
-  /map:
+  /metro/map:
     get:
       tags:
-        - data
+        - metro
       summary: Get the underground network map
       description: |
         Returns the full underground network as an array of `Subnetwork` objects, one per metro line.
@@ -261,15 +296,18 @@ paths:
                   $ref: '#/components/schemas/Subnetwork'
               example:
                 - line_id: 1
+                  stations: [1, 2, 3]
                   adj_matrix:
-                    - [-1,  1, -1]
-                    - [ 1, -1,  1]
-                    - [-1,  1, -1]
+                    - [0, 1, 0]
+                    - [1, 0, 1]
+                    - [0, 1, 0]
                 - line_id: 2
+                  stations: [2, 3, 4, 5]
                   adj_matrix:
-                    - [-1, -1,  1]
-                    - [-1, -1,  1]
-                    - [ 1,  1, -1]
+                    - [0, 0, 1, 0]
+                    - [0, 0, 1, 0]
+                    - [1, 1, 0, 1]
+                    - [0, 0, 1, 0]
         '401':
           description: Unauthorized
           content:
@@ -281,10 +319,10 @@ paths:
                 message: "Authorization header missing"
                 name: "UnauthorizedError"
 
-  /stations:
+  /metro/stations:
     get:
       tags:
-        - data
+        - metro
       summary: Get all stations
       description: Returns the list of all stations in the underground network.
       responses:
@@ -310,7 +348,7 @@ paths:
   /events:
     get:
       tags:
-        - data
+        - events
       summary: Get all possible events
       description: Retrieves the list of all available events in the game.
       responses:
@@ -336,9 +374,9 @@ paths:
   /ranking:
     get:
       tags:
-        - game
+        - ranking
       summary: Get general ranking
-      description: Retrieves a list of users and their best results, sorted by score.
+      description: Retrieves a list of users and their best results, sorted in descending order by score.
       responses:
         '200':
           description: Ranking retrieved successfully
@@ -389,10 +427,10 @@ paths:
         - game
       summary: Execute the planned route
       description: |
-        Validates the submitted route, applies random events to each segment, calculates the final score, and updates the user's best result.
+        Validates the submitted route, applies a random event to each segment, calculates the final score, and updates the user's best result.
 
-        - **Request body**: an array of `Subnetwork` objects, one per metro line involved in the route.
-        - **Response**: an array of `Subnetwork` objects with the same structure.
+        - **Request body**: an array of `Segment` objects representing the planned route.
+        - **Response**: the same array of `Segment` objects, each enriched with the `event_id` of the applied event.
       requestBody:
         required: true
         content:
@@ -400,38 +438,39 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/Subnetwork'
+                $ref: '#/components/schemas/Segment'
             example:
-              - line_id: 1
-                adj_matrix:
-                  - [-1,  1, -1]
-                  - [ 1, -1,  1]
-                  - [-1,  1, -1]
-              - line_id: 2
-                adj_matrix:
-                  - [-1, -1, -1]
-                  - [-1, -1,  1]
-                  - [-1,  1, -1]
+              - from_station_id: 1
+                to_station_id: 2
+                line_id: 1
+              - from_station_id: 2
+                to_station_id: 3
+                line_id: 1
+              - from_station_id: 3
+                to_station_id: 5
+                line_id: 2
       responses:
         '200':
-          description: Route executed successfully. Returns an array of Subnetworks annotated with the IDs of the applied events.
+          description: Route executed successfully. Returns the route segments annotated with the applied event IDs.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Subnetwork'
+                  $ref: '#/components/schemas/Segment'
               example:
-                - line_id: 1
-                  adj_matrix:
-                    - [-1,  3, -1]
-                    - [ 3, -1,  7]
-                    - [-1,  7, -1]
-                - line_id: 2
-                  adj_matrix:
-                    - [-1, -1, -1]
-                    - [-1, -1,  2]
-                    - [-1,  2, -1]
+                - from_station_id: 1
+                  to_station_id: 2
+                  line_id: 1
+                  event_id: 3
+                - from_station_id: 2
+                  to_station_id: 3
+                  line_id: 1
+                  event_id: 7
+                - from_station_id: 3
+                  to_station_id: 5
+                  line_id: 2
+                  event_id: 2
         '400':
           description: Invalid route submitted
           content:
