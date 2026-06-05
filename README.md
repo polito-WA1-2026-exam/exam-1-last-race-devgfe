@@ -47,8 +47,8 @@ flowchart TD
 
 ```mermaid
 erDiagram
-    station ||--o{ segment : "from"
-    station ||--o{ segment : "to"
+    station ||--|{ segment : "from"
+    station ||--|{ segment : "to"
     line ||--|{ segment : "belongs to"
     user ||--o{ game : "plays"
     station ||--o{ game : "departure"
