@@ -131,15 +131,32 @@ components:
       type: object
       description: A single entry in the general ranking, representing a registered user's best score across all their games.
       required:
-        - name
+        - user_name
+        - departure_station_name
+        - arrival_station_name
+        - timestamp
         - best_result
       properties:
-        name:
+        user_name:
           type: string
+          description: The name of the user.
           example: "Mario Rossi"
+        departure_station_name:
+          type: string
+          description: Name of the departure station in the user's best game.
+          example: "Argonne"
+        arrival_station_name:
+          type: string
+          description: Name of the arrival station in the user's best game.
+          example: "Palestro"
+        timestamp:
+          type: string
+          description: Date and time when the best game was played.
+          example: "2026-06-05 14:30:00"
         best_result:
           type: integer
-          example: 6
+          description: The highest score the user has achieved across all their games.
+          example: 5
 
     Endpoints:
       type: object
@@ -352,6 +369,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RankingEntry'
+              example:
+                - user_name: "Mario Rossi"
+                  departure_station_name: "Argonne"
+                  arrival_station_name: "Palestro"
+                  timestamp: "2026-06-05 14:30:00"
+                  best_result: 5
+                - user_name: "Luigi Ferrero"
+                  departure_station_name: "Gioia"
+                  arrival_station_name: "S. Ambrogio"
+                  timestamp: "2026-06-07 14:00:00"
+                  best_result: 21
         '401':
           description: Unauthorized
           content:
