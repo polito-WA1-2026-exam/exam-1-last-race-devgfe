@@ -14,12 +14,12 @@ tags:
   - name: auth
     description: Authentication and session management
   - name: metro
-    description: Metro network data — stations, lines and map
+    description: Metro network data — stations, lines and segments
   - name: events
     description: Game events catalog
   - name: ranking
     description: Global ranking
-  - name: game
+  - name: games
     description: Game logic
 
 components:
@@ -127,7 +127,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Event'
 
-    RankingEntry:
+    Game:
       type: object
       description: A single entry in the general ranking, representing a registered user's best score across all their games.
       required:
@@ -135,7 +135,7 @@ components:
         - departure_station_name
         - arrival_station_name
         - timestamp
-        - best_result
+        - best_score
       properties:
         user_name:
           type: string
@@ -153,7 +153,7 @@ components:
           type: string
           description: Date and time when the best game was played.
           example: "2026-06-05 14:30:00"
-        best_result:
+        best_score:
           type: integer
           description: The highest score the user has achieved across all their games.
           example: 5
@@ -172,7 +172,7 @@ components:
           type: integer
           example: 5
 
-    LoginRequest:
+    UserLoginRequest:
       type: object
       description: Credentials submitted by the user to authenticate and start a session.
       required:
@@ -368,18 +368,18 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RankingEntry'
+                  $ref: '#/components/schemas/Game'
               example:
                 - user_name: "Mario Rossi"
                   departure_station_name: "Argonne"
                   arrival_station_name: "Palestro"
                   timestamp: "2026-06-05 14:30:00"
-                  best_result: 5
+                  best_score: 5
                 - user_name: "Luigi Ferrero"
                   departure_station_name: "Gioia"
                   arrival_station_name: "S. Ambrogio"
                   timestamp: "2026-06-07 14:00:00"
-                  best_result: 21
+                  best_score: 21
         '401':
           description: Unauthorized
           content:
@@ -394,7 +394,7 @@ paths:
   /games:
     post:
       tags:
-        - game
+        - games
       summary: Create a new mission (start/end stations)
       description: Creates a new game session by randomly assigning a departure and arrival station with a minimum distance of 3 segments.
       responses:
@@ -418,7 +418,7 @@ paths:
   /games/current/route:
     post:
       tags:
-        - game
+        - games
       summary: Execute the planned route
       description: |
         Validates the submitted route, applies a random event to each segment, calculates the final score, and saves the game record.
@@ -510,7 +510,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/UserLoginRequest'
       responses:
         '200':
           description: Login successful
@@ -519,7 +519,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserResponse'
         '401':
-          description: Invalid credentials
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -527,7 +527,7 @@ paths:
               example:
                 code: 401
                 message: "Invalid credentials"
-                name: "InvalidCredentials"
+                name: "UnauthorizedError"
 
   /session/current:
     get:
