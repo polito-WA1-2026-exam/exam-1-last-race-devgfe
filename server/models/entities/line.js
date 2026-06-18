@@ -1,4 +1,4 @@
-export function LineDAO(id, name, color){
+export function Line(id, name, color){
     this.id = id;
     this.name = name;
     this.color = color;

@@ -1,4 +1,4 @@
-export function UserDAO(id, name, email, password, salt){
+export function User(id, name, email, password, salt){
     this.id = id;
     this.name = name;
     this.email = email;
