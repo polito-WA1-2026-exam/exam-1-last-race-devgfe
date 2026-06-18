@@ -1,5 +1,5 @@
-import db from "../database/database.js";
-import SegmentDAO from "../models/DAO/segment-dao.js";
+import { db } from "../database/database.js";
+import { Segment } from "../models/entities/segment.js";
 
 export const listSegments = () => {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,7 @@ export const listSegments = () => {
       if(err){
         reject(err);
       }else{
-        const segments = rows.map((segment) => new SegmentDAO(segment.from_station_id, segment.to_station_id, segment.line_id));
+        const segments = rows.map((segment) => new Segment(segment.from_station_id, segment.to_station_id, segment.line_id));
         resolve(segments);
       }
     });

@@ -1,5 +1,5 @@
-import db from "../database/database.js";
-import StationDAO from "../models/DAO/station-dao.js";
+import { db } from "../database/database.js";
+import { Station } from "../models/entities/station.js";
 
 export const listStations = () => {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,7 @@ export const listStations = () => {
       if(err){
         reject(err);
       }else{
-        const stations = rows.map((station) => new StationDAO(station.id, station.name, station.description, station.effect));
+        const stations = rows.map((station) => new Station(station.id, station.name, station.latitude, station.longitude));
         resolve(stations);
       }
     });

@@ -1,5 +1,5 @@
-import db from "../database/database.js";
-import LineDAO from "../models/DAO/line-dao.js";
+import { db } from "../database/database.js";
+import { Line } from "../models/entities/line.js";
 
 export const listLines = () => {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,7 @@ export const listLines = () => {
       if(err){
         reject(err);
       }else{
-        const lines = rows.map((line) => new LineDAO(line.id, line.name, line.color));
+        const lines = rows.map((line) => new Line(line.id, line.name, line.color));
         resolve(lines);
       }
     });
