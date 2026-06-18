@@ -17,3 +17,8 @@ export const ROUTES = {
 
 // App configuration
 export const APP_PORT = 3001;
+
+// Rules
+export const MIN_DISTANCE_SEGMENT = 3;
+export const MIN_DISTANCE_STOP = MIN_DISTANCE_SEGMENT + 1;
+export const MAX_GAME_DURATION = 90; // seconds

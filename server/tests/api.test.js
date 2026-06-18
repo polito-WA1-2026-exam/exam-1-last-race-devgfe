@@ -3,7 +3,7 @@ import { app } from "../index.js";
 import { UserLoginRequestDTO } from "../models/dto/user-dto.js"
 import { ROUTES } from "../config/config.js";
 
-describe("API without login", () => {
+describe("API Without login", () => {
     it("", async () => {
         const res = await request(app).get(ROUTES.V1_EVENTS)
             .expect("Content-Type", /json/)
@@ -104,6 +104,35 @@ describe.each([
         const res = await agent.get(ROUTES.V1_GAMES + "/my-best")
             .expect("Content-Type", /json/)
             .expect(expectedStatus);
+
+        console.log(res.body);
+    });
+});
+
+describe("API Route /games", () => {
+    let agent;
+
+    beforeAll(async () => {
+        agent = request.agent(app);
+        const res = await agent.post(ROUTES.V1_AUTH)
+            .send(new UserLoginRequestDTO("lucia@test.com", "password"))
+            .expect(201); 
+        
+        console.log(res.body);
+    });
+
+    it("", async () => {
+        const res = await agent.post(ROUTES.V1_GAMES)
+            .expect("Content-Type", /json/)
+            .expect(200);
+
+        console.log(res.body);
+    });
+
+    it("", async () => {
+        const res = await agent.post(ROUTES.V1_GAMES + "/current")
+            .expect("Content-Type", /json/)
+            .expect(422);
 
         console.log(res.body);
     });

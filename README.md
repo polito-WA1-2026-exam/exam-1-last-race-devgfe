@@ -33,11 +33,11 @@ flowchart TD
         Controller[Controller]
         DAO[DAO]
         Database[(SQLite)]
-    end
 
-    subgraph Models [Models]
-        DTO[DTO]
-        Entity[Entity]
+        subgraph Models [Models]
+            DTO[DTO]
+            Entity[Entity]
+        end
     end
 
     Client == "HTTP JSON" ==> Router

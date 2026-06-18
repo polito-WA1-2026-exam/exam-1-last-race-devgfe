@@ -429,7 +429,7 @@ paths:
                 message: "Not authenticated"
                 name: "UnauthorizedError"
 
-  /games/current/route:
+  /games/current:
     post:
       tags:
         - games

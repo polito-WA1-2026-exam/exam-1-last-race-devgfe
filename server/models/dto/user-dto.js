@@ -1,4 +1,4 @@
-import { check, validationResult } from "express-validator";
+import { body, validationResult } from "express-validator";
 import { sendValidationError } from "../../services/error-service.js"
 
 export function UserLoginRequestDTO(email, password){
@@ -13,8 +13,8 @@ export function UserResponseDTO(id, name, email){
 }
 
 const rules = [
-    check('username').notEmpty().isEmail().normalizeEmail(),
-    check('password').notEmpty().isString()
+    body('username').notEmpty().isEmail().normalizeEmail(),
+    body('password').notEmpty().isString()
 ];
 
 export const userLoginRequestValidation = async (req, res, next) => {
