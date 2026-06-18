@@ -31,16 +31,23 @@ flowchart TD
     subgraph Server [Backend Server]
         Router[Express Router]
         Controller[Controller]
-        Repo[Repository]
+        DAO[DAO]
         Database[(SQLite)]
     end
 
-    Client <== "HTTP JSON" ==> Router
-    Router -- "DTO (validated input)" --> Controller
-    Controller -- "calls" --> Repo
-    Repo -- "DAO" --> Controller
-    Controller -- "DTO (response)" --> Router
-    Repo == "sqlite3" ==> Database
+    subgraph Models [Models]
+        DTO[DTO]
+        Entity[Entity]
+    end
+
+    Client == "HTTP JSON" ==> Router
+    Router --> Controller
+    Controller --> DAO
+    DAO == "sqlite3" ==> Database
+    Controller -.-> Entity
+    DAO -.-> Entity
+    Controller -.-> DTO
+    Router -.-> DTO
 ```
 
 ### Database Tables
@@ -51,8 +58,6 @@ erDiagram
     station ||--|{ segment : "to"
     line ||--|{ segment : "belongs to"
     user ||--o{ game : "plays"
-    station ||--o{ game : "departure"
-    station ||--o{ game : "arrival"
 
     event {
         int id PK
@@ -86,9 +91,6 @@ erDiagram
     game {
         int id PK
         int user_id FK
-        int departure_station_id FK
-        int arrival_station_id FK
-        datetime timestamp
         int score
     }
 ```

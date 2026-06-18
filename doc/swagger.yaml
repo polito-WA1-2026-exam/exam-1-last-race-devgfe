@@ -17,8 +17,6 @@ tags:
     description: Metro network data — stations, lines and segments
   - name: events
     description: Game events catalog
-  - name: ranking
-    description: Global ranking
   - name: games
     description: Game logic
 
@@ -132,27 +130,12 @@ components:
       description: A single entry in the general ranking, representing a registered user's best score across all their games.
       required:
         - user_name
-        - departure_station_name
-        - arrival_station_name
-        - timestamp
         - best_score
       properties:
         user_name:
           type: string
           description: The name of the user.
           example: "Mario Rossi"
-        departure_station_name:
-          type: string
-          description: Name of the departure station in the user's best game.
-          example: "Argonne"
-        arrival_station_name:
-          type: string
-          description: Name of the arrival station in the user's best game.
-          example: "Palestro"
-        timestamp:
-          type: string
-          description: Date and time when the best game was played.
-          example: "2026-06-05 14:30:00"
         best_score:
           type: integer
           description: The highest score the user has achieved across all their games.
@@ -205,10 +188,6 @@ components:
         email:
           type: string
           example: "mario@test.com"
-        best_score:
-          type: integer
-          nullable: true
-          example: 6
 
     ErrorResponse:
       type: object
@@ -354,10 +333,51 @@ paths:
                 message: "Not authenticated"
                 name: "UnauthorizedError"
 
-  /ranking:
+  /games/my-best:
     get:
       tags:
-        - ranking
+        - games
+      summary: Get current user's best score
+      description: Retrieves the best score achieved by the currently authenticated user across all their games.
+      responses:
+        '200':
+          description: Ranking retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+              example:
+                - user_name: "Mario Rossi"
+                  best_score: 5
+                - user_name: "Luigi Ferrero"
+                  best_score: 21
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 401
+                message: "Not authenticated"
+                name: "UnauthorizedError"
+        '404':
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 401
+                message: "The user has never played"
+                name: "NotFoundError"
+
+  /games/ranking:
+    get:
+      tags:
+        - games
       summary: Get general ranking
       description: Retrieves a list of users and their best results, sorted in descending order by score.
       responses:
@@ -371,14 +391,8 @@ paths:
                   $ref: '#/components/schemas/Game'
               example:
                 - user_name: "Mario Rossi"
-                  departure_station_name: "Argonne"
-                  arrival_station_name: "Palestro"
-                  timestamp: "2026-06-05 14:30:00"
                   best_score: 5
                 - user_name: "Luigi Ferrero"
-                  departure_station_name: "Gioia"
-                  arrival_station_name: "S. Ambrogio"
-                  timestamp: "2026-06-07 14:00:00"
                   best_score: 21
         '401':
           description: Unauthorized
