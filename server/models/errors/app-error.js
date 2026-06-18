@@ -1,5 +1,6 @@
-export function AppError(code, message, name){
-    this.code = code;
-    this.message = message;
-    this.name = name;
+export class AppError extends Error {
+    constructor(code, message){
+        super(message);
+        this.code = code;
+    }
 }
