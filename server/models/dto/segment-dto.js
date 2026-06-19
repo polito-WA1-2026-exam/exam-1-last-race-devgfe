@@ -41,3 +41,10 @@ export const routeValidation = async (req, res, next) => {
 
     return segmentValidation(req, res, next);
 };
+
+export const isEqual = (segmentA, segmentB) => {
+    if (segmentA.from_station_id != segmentB.from_station_id) return false;
+    if (segmentA.to_station_id != segmentB.to_station_id) return false;
+    if (segmentA.line_id != segmentB.line_id) return false;
+    return true;
+};

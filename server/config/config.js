@@ -21,4 +21,7 @@ export const APP_PORT = 3001;
 // Rules
 export const MIN_DISTANCE_SEGMENT = 3;
 export const MIN_DISTANCE_STOP = MIN_DISTANCE_SEGMENT + 1;
+export const MAX_DATA_SENDING_DELAY = 3; // seconds
 export const MAX_GAME_DURATION = 90; // seconds
+
+export const STARTING_COINS = 20;

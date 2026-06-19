@@ -1,18 +1,20 @@
-import { listBestGames as listBestGamesDAO, getBestGame as getBestGameDAO } from "../dao/game-dao.js";
+import { listBestGames as listBestGamesDAO, getBestGame as getBestGameDAO, addGame } from "../dao/game-dao.js";
 import { listSegments } from "../dao/segment-dao.js";
 import { listStations } from "../dao/station-dao.js";
 import { listEvents } from "../dao/event-dao.js";
 import { NotFoundError } from "../models/errors/notfound-error.js";
 import { ValidationError } from "../models/errors/validation-error.js";
 import { InvalidRouteError } from "../models/errors/invalidroute-error.js";
+import { UnauthorizedError } from "../models/errors/unauthorized-error.js";
 import { gameEntityToDTO } from "../services/mapper-service.js";
-import { MIN_DISTANCE_STOP, MAX_GAME_DURATION } from "../config/config.js";
+import { MIN_DISTANCE_SEGMENT, MIN_DISTANCE_STOP, MAX_GAME_DURATION, MAX_DATA_SENDING_DELAY, STARTING_COINS } from "../config/config.js";
 import { EndpointsDTO } from "../models/dto/endpoints-dto.js";
-import { SegmentDTO } from "../models/dto/segment-dto.js";
+import { isEqual as isEqualSegment } from "../models/dto/segment-dto.js";
 import { eventEntityToDTO } from "../services/mapper-service.js";
+import dayjs from "dayjs";
 
 
-async function getAdjMatrix(){
+async function getAdjMatrix() {
     const segments = await listSegments();
     const stations = await listStations();
 
@@ -23,9 +25,9 @@ async function getAdjMatrix(){
 
     // Init adj matrix
     const adjMatrix = [];
-    for(let i=0; i<stations.length; i++){
+    for (let i = 0; i < stations.length; i++) {
         adjMatrix.push([]);
-        for(let j=0; j<stations.length; j++){
+        for (let j = 0; j < stations.length; j++) {
             adjMatrix[i].push(0);
         }
     }
@@ -35,17 +37,17 @@ async function getAdjMatrix(){
         adjMatrix[stationIdToIndex[segment.from_station_id]][stationIdToIndex[segment.to_station_id]] = 1;
     });
 
-    return {stationIdToIndex, stations, adjMatrix};
+    return { stationIdToIndex, stations, adjMatrix };
 }
 
-function isValidEndpoints(adjMatrix, endpoints){
+function isValidEndpoints(adjMatrix, endpoints) {
     const stationsVisited = [];
-    const {endpointsTooClose, routeFound} = _isValidEndpoints(adjMatrix, endpoints.departureStationIndex, endpoints.arrivalStationIndex, stationsVisited);
+    const { endpointsTooClose, routeFound } = _isValidEndpoints(adjMatrix, endpoints.departureStationIndex, endpoints.arrivalStationIndex, stationsVisited);
     return !endpointsTooClose && routeFound; // endpointsTooClose == false && routeFound == true
 }
 
-function _isValidEndpoints(adjMatrix, currentStationIndex, arrivalStationIndex, stationsVisited){
-    if(currentStationIndex === arrivalStationIndex) {
+function _isValidEndpoints(adjMatrix, currentStationIndex, arrivalStationIndex, stationsVisited) {
+    if (currentStationIndex === arrivalStationIndex) {
         const distance = stationsVisited.length + 1; // +1 because I also count the last station (i.e. the arrival station)
         const endpointsTooClose = distance < MIN_DISTANCE_STOP ? true : false; // Filter invalid endpoints
         return {
@@ -55,15 +57,15 @@ function _isValidEndpoints(adjMatrix, currentStationIndex, arrivalStationIndex, 
     }
 
     stationsVisited.push(currentStationIndex);
-    
+
     const stationsToVisit = adjMatrix[currentStationIndex];
     let routeFound = false;
 
-    for(let i=0; i<stationsToVisit.length; i++){
-        if(stationsToVisit[i] && !stationsVisited.includes(i)){
+    for (let i = 0; i < stationsToVisit.length; i++) {
+        if (stationsToVisit[i] && !stationsVisited.includes(i)) {
             let endpointsTooClose;
-            ({endpointsTooClose, routeFound} = _isValidEndpoints(adjMatrix, i, arrivalStationIndex, stationsVisited));
-            if(endpointsTooClose) return {endpointsTooClose, routeFound}; // Forced return if at least one route found is invalid
+            ({ endpointsTooClose, routeFound } = _isValidEndpoints(adjMatrix, i, arrivalStationIndex, stationsVisited));
+            if (endpointsTooClose) return { endpointsTooClose, routeFound }; // Forced return if at least one route found is invalid
         }
     }
 
@@ -76,45 +78,71 @@ function _isValidEndpoints(adjMatrix, currentStationIndex, arrivalStationIndex, 
 }
 
 export const getEndpoints = async () => {
-    const {stations, adjMatrix} = await getAdjMatrix();
+    const { stations, adjMatrix } = await getAdjMatrix();
 
     let endpoints;
-    do{
+    do {
         const departureStationIndex = Math.floor(Math.random() * stations.length);
         const arrivalStationIndex = Math.floor(Math.random() * stations.length);
-        endpoints = {departureStationIndex, arrivalStationIndex};
-    } while(!isValidEndpoints(adjMatrix, endpoints));
+        endpoints = { departureStationIndex, arrivalStationIndex };
+    } while (!isValidEndpoints(adjMatrix, endpoints));
 
     return new EndpointsDTO(stations[endpoints.arrivalStationIndex].id, stations[endpoints.departureStationIndex].id);
 };
 
-export const executeRoute = async (gameData, route) => {
-    const {stationIdToIndex, adjMatrix} = await getAdjMatrix();
+export const executeRoute = async (gameData, route, user_id) => {
+    const { stationIdToIndex, adjMatrix } = await getAdjMatrix();
     const events = await listEvents();
 
-    if(gameData == null) throw new InvalidRouteError("No active games found");
+    // Start checks
+    if (user_id == null) throw new UnauthorizedError("The user who sent the route is invalid");
 
-    const endpoints = gameData.endpoints;
-    const duration = dayjs().unix() - gameData.startTime;
+    try {
+        if (gameData == null) throw new InvalidRouteError("No active games found");
+        if (route == null) throw new InvalidRouteError("A null route was passed");
 
-    if(duration > MAX_GAME_DURATION) throw new InvalidRouteError("Took too long to create the route");
+        const duration = dayjs().unix() - gameData.startTime;
+        if (duration > MAX_GAME_DURATION + MAX_DATA_SENDING_DELAY) throw new InvalidRouteError("Took too long to create the route");
 
-    if(route[0].from_station_id != endpoints.departure_station_id) throw new InvalidRouteError("The start of the route does not match the one assigned in the endpoints");
-    if(route[route.length-1].to_station_id != endpoints.arrival_station_id) throw new InvalidRouteError("The end of the route does not match the one assigned in the endpoints");
-    
-    for(let i=0; i<route.length-1; i++){
-        if(route[i].to_station_id != route[i+1].from_station_id) throw new InvalidRouteError("Route interrupted");
-        
-        const fromStationIndex = stationIdToIndex[route[i].from_station_id];
-        const toStationIndex = stationIdToIndex[route[i].to_station_id];
-        if(!adjMatrix[fromStationIndex][toStationIndex]) throw new InvalidRouteError("Non-existent connection between two stations");
+        if (route.length < MIN_DISTANCE_SEGMENT) throw new InvalidRouteError("Selected route too short");
+
+        const endpoints = gameData.endpoints;
+        if (route[0].from_station_id != endpoints.departure_station_id) throw new InvalidRouteError("The start of the route does not match the one assigned in the endpoints");
+        if (route[route.length - 1].to_station_id != endpoints.arrival_station_id) throw new InvalidRouteError("The end of the route does not match the one assigned in the endpoints");
+
+        const segmentsVisited = [];
+        for (let i = 0; i < route.length; i++) {
+            if (i < route.length - 1)
+                if (route[i].to_station_id != route[i + 1].from_station_id) throw new InvalidRouteError("Route interrupted");
+
+            const fromStationIndex = stationIdToIndex[route[i].from_station_id];
+            const toStationIndex = stationIdToIndex[route[i].to_station_id];
+            if (!adjMatrix[fromStationIndex][toStationIndex]) throw new InvalidRouteError("Non-existent connection between two stations");
+
+            const segment = route[i];
+            const segmentAlreadyUsed = segmentsVisited.some((seg) => isEqualSegment(segment, seg));
+            if (segmentAlreadyUsed) throw new InvalidRouteError("Segment already used");
+            segmentsVisited.push(segment);
+        }
+    } catch (err) {
+        await addGame(user_id, 0);
+        throw err;
     }
-
-    return route.map((segment) => {
+    
+    // If everything is correct
+    let score = STARTING_COINS;
+    const routeWithEvents = route.map((segment) => {
         const eventIndex = Math.floor(Math.random() * events.length);
-        segment.event = eventEntityToDTO(events[eventIndex]);
+        const selectedEvent = events[eventIndex];
+        score += selectedEvent.effect;
+        segment.event = eventEntityToDTO(selectedEvent);
         return segment;
     });
+
+    if (score < 0) score = 0;
+    await addGame(user_id, score);
+
+    return routeWithEvents;
 };
 
 export const listBestGames = async () => {
@@ -123,8 +151,8 @@ export const listBestGames = async () => {
 };
 
 export const getBestGame = async (user_id) => {
-    if(user_id == null) throw new ValidationError("Invalid user id");
+    if (user_id == null) throw new ValidationError("Invalid user id");
     const game = await getBestGameDAO(user_id);
-    if(game == null) throw new NotFoundError("The user has never played");
+    if (game == null) throw new NotFoundError("The user has never played");
     return gameEntityToDTO(game);
 };
