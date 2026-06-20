@@ -3,7 +3,7 @@ import { Game } from "../models/entities/game.js";
 
 export const listBestGames = () => {
   return new Promise((resolve, reject) => {
-    const sql = "SELECT game.*, user.name AS user_name FROM game JOIN user ON game.user_id = user.id WHERE (game.user_id, game.id) IN (SELECT user_id, MAX(id) FROM game WHERE (user_id, score) IN (SELECT user_id, MAX(score) FROM game GROUP BY user_id) GROUP BY user_id) ORDER BY game.score";
+    const sql = "SELECT game.*, user.name AS user_name FROM game JOIN user ON game.user_id = user.id WHERE (game.user_id, game.id) IN (SELECT user_id, MAX(id) FROM game WHERE (user_id, score) IN (SELECT user_id, MAX(score) FROM game GROUP BY user_id) GROUP BY user_id) ORDER BY game.score DESC";
     db.all(sql, [], (err, rows) => {
       if(err){
         reject(err);

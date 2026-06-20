@@ -5,7 +5,7 @@ import { sendAppError } from "../services/error-service.js";
 
 const router = express.Router();
 
-router.get("/", isLoggedIn, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const result = await listEvents();
     res.json(result);

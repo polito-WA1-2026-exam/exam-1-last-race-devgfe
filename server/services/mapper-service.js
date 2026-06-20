@@ -8,7 +8,7 @@ import { StationDTO } from "../models/dto/station-dto.js";
 import { GameDTO } from "../models/dto/game-dto.js";
 
 export const userEntityToResponseDTO = (user) => {
-    if (user == null) return null;
+    if (!user) return null;
     return new UserResponseDTO(user.id, user.name, user.email);
 }
 
@@ -47,5 +47,5 @@ export const stationEntityToDTO = (station) => {
 }
 
 export const gameEntityToDTO = (game) => {
-    return new GameDTO(game.user_name, game.score);
+    return new GameDTO(game.id, game.user_name, game.score);
 }

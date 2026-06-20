@@ -10,6 +10,7 @@ const router = express.Router();
 router.post("/", isLoggedIn, async (req, res) => {
   try {
     const result = await getEndpoints();
+    delete req.session.gameData;
     req.session.gameData = {
       "endpoints": result,
       "startTime": dayjs().unix()
