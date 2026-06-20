@@ -18,7 +18,7 @@ export const getUserByCredentials = (email, password) => {
             reject(err);
           }
           if(!crypto.timingSafeEqual(Buffer.from(user.password, "hex"), hashedPassword)){
-            resolve(false);
+            resolve(null);
           }else{
             resolve(user);
           }

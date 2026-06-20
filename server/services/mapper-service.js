@@ -8,6 +8,7 @@ import { StationDTO } from "../models/dto/station-dto.js";
 import { GameDTO } from "../models/dto/game-dto.js";
 
 export const userEntityToResponseDTO = (user) => {
+    if (user == null) return null;
     return new UserResponseDTO(user.id, user.name, user.email);
 }
 

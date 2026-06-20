@@ -2,7 +2,7 @@ import express from "express";
 import dayjs from "dayjs";
 import { isLoggedIn } from "../services/auth-service.js";
 import { getEndpoints, executeRoute, listBestGames, getBestGame } from "../controllers/games-controller.js";
-import { routeValidation } from "../models/dto/segment-dto.js";
+import { SegmentDTO, routeValidation } from "../models/dto/segment-dto.js";
 import { sendAppError } from "../services/error-service.js";
 
 const router = express.Router();
@@ -22,7 +22,8 @@ router.post("/", isLoggedIn, async (req, res) => {
 
 router.post("/current", isLoggedIn, routeValidation, async (req, res) => {
   try {
-    const result = await executeRoute(req.session?.gameData, req.body, req.user?.id);
+    const route = req.body.map(segment => new SegmentDTO(segment.from_station_id, segment.to_station_id, segment.line_id));
+    const result = await executeRoute(req.session?.gameData, route, req.user?.id);
     res.json(result);
   } catch (err) {
     return sendAppError(err, res);

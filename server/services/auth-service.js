@@ -8,7 +8,7 @@ passport.use(new LocalStrategy(async function verify(username, password, cb) {
   const user = userEntityToResponseDTO(await getUserByCredentials(username, password));
   if(!user) {
     //null -> no error, invalid credetials, message
-    return cb(null, false, "Incorrect email or password."); // error message in the WWW-Authenticated header of the response
+    return cb(null, false, "Incorrect email or password"); // error message in the WWW-Authenticated header of the response
   }
   return cb(null, user);
 }));
