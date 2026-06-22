@@ -36,7 +36,7 @@ export function GameLayout(props) {
     return (
         <>
             <GameContext.Provider value={{ lines, segments, stations, stationIdToIndex, lineIdToIndex, route, endpoints }}>
-                <Container>
+                <Container className="py-4 d-flex flex-column flex-grow-1">
                     <Routes>
                         <Route path="setup" element={<GameSetupLayout
                             setLines={setLines}

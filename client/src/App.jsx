@@ -1,9 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import './App.css'
 
 import { useEffect, useState } from 'react';
-import { Container, Toast, ToastBody } from 'react-bootstrap/';
+import { Container, Toast, ToastBody, ToastContainer } from 'react-bootstrap/';
 import { Route, Routes, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { doLogin, doLogout, checkSession } from './api/auth-api.js';
@@ -61,29 +60,31 @@ function App() {
 
     useEffect(() => {
         checkSession()
-        .then(user => {
-            setUser(user);
-            setLoggedIn(true);
-        })
-        .catch(e => {
-            setUser(null);
-            setLoggedIn(false);
-        })
+            .then(user => {
+                setUser(user);
+                setLoggedIn(true);
+            })
+            .catch(e => {
+                setUser(null);
+                setLoggedIn(false);
+            })
     }, [])
 
     useEffect(() => {
-        getMyBest()
-        .then(game => {
-            setBestScore(game.best_score)
-        })
-        .then(() => setShouldRefresh(false))
-        .catch(e => setBestScore(-1))
-    }, [shouldRefresh])
+        if (loggedIn) {
+            getMyBest()
+                .then(game => {
+                    setBestScore(game.best_score)
+                })
+                .then(() => setShouldRefresh(false))
+                .catch(e => setBestScore(-1))
+        }
+    }, [shouldRefresh, loggedIn])
 
 
     return (<>
         <FeedbackContext.Provider value={{ setFeedback, setFeedbackFromError }}>
-            <Container>
+            <Container fluid className="min-vh-100 d-flex flex-column py-3 bg-light">
                 <Routes>
                     <Route path='/' element={<MainLayout handleLogout={handleLogout} user={user} loggedIn={loggedIn} bestScore={bestScore} />}>
                         <Route index element={<HomeLayout />} />
@@ -99,18 +100,21 @@ function App() {
                         <Route path="*" element={<NotFoundLayout />} />
                     </Route>
                 </Routes>
-                <Toast
-                    show={feedback !== ''}
-                    autohide
-                    onClose={() => setFeedback('')}
-                    delay={4000}
-                    position="top-end"
-                    className="position-fixed top-0 end-0 m-3"
-                >
-                    <ToastBody>
-                        {feedback}
-                    </ToastBody>
-                </Toast>
+                <ToastContainer className="p-4 mt-5" position="top-end" style={{ zIndex: 1050 }}>
+                    <Toast
+                        show={feedback !== ''}
+                        autohide
+                        onClose={() => setFeedback('')}
+                        delay={4000}
+                        bg="white"
+                        className="shadow-lg border border-secondary-subtle rounded-4"
+                    >
+                        <ToastBody className="text-dark d-flex align-items-center py-3">
+                            <i className="bi bi-info-circle-fill fs-4 text-warning me-3"></i>
+                            <span className="fw-medium fs-6">{feedback}</span>
+                        </ToastBody>
+                    </Toast>
+                </ToastContainer>
             </Container>
         </FeedbackContext.Provider>
     </>);
