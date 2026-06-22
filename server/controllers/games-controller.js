@@ -131,18 +131,18 @@ export const executeRoute = async (gameData, route, user_id) => {
     
     // If everything is correct
     let score = STARTING_COINS;
-    const routeWithEvents = route.map((segment) => {
+    const appliedEvents = [];
+    for(let i=0; i<route.length; i++){
         const eventIndex = Math.floor(Math.random() * events.length);
         const selectedEvent = events[eventIndex];
         score += selectedEvent.effect;
-        segment.event = eventEntityToDTO(selectedEvent);
-        return segment;
-    });
+        appliedEvents.push(eventEntityToDTO(selectedEvent));
+    }
 
     if (score < 0) score = 0;
     await addGame(user_id, score);
 
-    return routeWithEvents;
+    return { appliedEvents, score };
 };
 
 export const listBestGames = async () => {
