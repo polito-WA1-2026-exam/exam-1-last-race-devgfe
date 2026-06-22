@@ -120,10 +120,6 @@ components:
           type: integer
           description: ID of the metro line used for this segment.
           example: 2
-        event:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/Event'
 
     Game:
       type: object
@@ -438,7 +434,7 @@ paths:
         Validates the submitted route, applies a random event to each segment, calculates the final score, and saves the game record.
 
         - **Request body**: an ordered array of `Segment` objects representing the planned route. The order reflects exactly the sequence of segments as the player chose to build the route (from departure to arrival).
-        - **Response**: the same ordered array of `Segment` objects, each enriched with the full `event` object applied to that segment. The order is preserved from the request.
+        - **Response**: an object containing the final calculated `score` score and the `appliedEvents` ordered array of `Event` objects (one per submitted segment, matching the request sequence).
       requestBody:
         required: true
         content:
@@ -459,35 +455,35 @@ paths:
                 line_id: 2
       responses:
         '200':
-          description: Route executed successfully. Returns the route segments each enriched with the applied event object.
+          description: Route executed successfully. Returns the final score and the ordered list of events applied.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Segment'
+                type: object
+                required:
+                  - score
+                  - appliedEvents
+                properties:
+                  score:
+                    type: integer
+                    description: The final calculated number of coins for the completed game.
+                  appliedEvents:
+                    type: array
+                    description: An ordered list of events, one per submitted segment, in the same order as the request.
+                    items:
+                      $ref: '#/components/schemas/Event'
               example:
-                - from_station_id: 1
-                  to_station_id: 2
-                  line_id: 1
-                  event:
-                    id: 3
+                score: 17
+                appliedEvents:
+                  - id: 3
                     name: "Kind passenger"
                     description: "Kind passenger, +1 coin"
                     effect: 1
-                - from_station_id: 2
-                  to_station_id: 3
-                  line_id: 1
-                  event:
-                    id: 9
+                  - id: 9
                     name: "Dirty floor"
                     description: "Dirty floor, -1 coin"
                     effect: -1
-                - from_station_id: 3
-                  to_station_id: 5
-                  line_id: 2
-                  event:
-                    id: 8
+                  - id: 8
                     name: "Air conditioning that works"
                     description: "Air conditioning that works, +2 coins"
                     effect: 2
