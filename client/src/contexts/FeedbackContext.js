@@ -1,8 +1,5 @@
 import React from "react";
 
-const FeedbackContext = React.createContext({
-    setFeedback: (message) => {},
-    setFeedbackFromError: (error) => {}
-});
+const FeedbackContext = React.createContext();
 
 export default FeedbackContext;

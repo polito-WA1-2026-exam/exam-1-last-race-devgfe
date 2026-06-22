@@ -14,7 +14,7 @@ export function HomeLayout(props) {
                         <Button onClick={() => navigate('/game/setup')}>Play now</Button>
                     </Col>
                     <Col>
-                        <Button onClick={() => navigate('/ranking')}>Ranking</Button>
+                        <Button onClick={() => navigate('/ranking')}>Look ranking</Button>
                     </Col>
                 </Row>
             </Container>

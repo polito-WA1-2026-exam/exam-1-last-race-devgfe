@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button, Col, Form, Row } from 'react-bootstrap';
-import { PropTypes } from "prop-types";
 
 export function LoginLayout(props) {
     const [email, setEmail] = useState('');
@@ -41,8 +40,4 @@ export function LoginLayout(props) {
             </Row>
         </>
     );
-}
-
-LoginLayout.propTypes = {
-    handleLogin: PropTypes.func,
 }

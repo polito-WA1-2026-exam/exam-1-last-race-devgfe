@@ -1,5 +1,4 @@
-import PropTypes from 'prop-types';
-import { Col, Row, ListGroup, ListGroupItem } from 'react-bootstrap/';
+import { Col, Row, ListGroup, ListGroupItem, Container } from 'react-bootstrap/';
 import { useEffect, useContext, useState } from 'react';
 import { getEvents } from '../api/events-api.js'
 import FeedbackContext from "../contexts/FeedbackContext.js";
@@ -21,14 +20,15 @@ export function InstructionLayout(props) {
     );
 }
 
-InstructionLayout.propTypes = {};
-
 function EventList(props) {
     const [events, setEvents] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { setFeedbackFromError } = useContext(FeedbackContext);
 
     useEffect(() => {
+        setIsLoading(true);
         getEvents().then(response => {
+            setIsLoading(false);
             setEvents(response);
         }).catch(e => {
             setEvents([]);
@@ -37,29 +37,34 @@ function EventList(props) {
     }, [])
 
     return (
-        <ListGroup id="films-list" variant="flush">
-            <ListGroupItem>
-                <Row>
-                    <Col>
-                        Name
-                    </Col>
-                    <Col>
-                        Description
-                    </Col>
-                    <Col>
-                        Effect
-                    </Col>
-                </Row>
-            </ListGroupItem>
-            {events.map((event) => <EventInList
-                key={event.id}
-                event={event}
-            />)}
-        </ListGroup>
+        <>
+            {isLoading ? <h3>Loading...</h3> :
+                <Container>
+                    <ListGroup id="events-list" variant="flush">
+                        <ListGroupItem>
+                            <Row>
+                                <Col>
+                                    Name
+                                </Col>
+                                <Col>
+                                    Description
+                                </Col>
+                                <Col>
+                                    Effect
+                                </Col>
+                            </Row>
+                        </ListGroupItem>
+                        {events.map((event) => <EventInList
+                            key={event.id}
+                            event={event}
+                        />)}
+                    </ListGroup>
+                </Container>
+            }
+        </>
+
     );
 }
-
-EventList.propTypes = {};
 
 function EventInList(props) {
     const event = props.event;
@@ -82,7 +87,3 @@ function EventInList(props) {
         </>
     );
 }
-
-EventInList.propTypes = {
-    event: PropTypes.object.isRequired
-};

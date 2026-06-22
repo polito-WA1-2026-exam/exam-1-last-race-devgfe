@@ -22,3 +22,8 @@ export const MIN_DISTANCE_STOP = MIN_DISTANCE_SEGMENT + 1;
 export const MAX_GAME_DURATION = 90; // seconds
 
 export const STARTING_COINS = 20;
+
+// Map drawing
+export const MAP_CENTER = [45.46415126670554, 9.191935499796077]; // Piazza Duomo
+export const MAP_DEFAULT_ZOOM = 13;
+export const MAP_SPACING_BETWEEN_SEGMENTS = 10; // pixel

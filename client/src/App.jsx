@@ -7,11 +7,8 @@ import { Container, Toast, ToastBody } from 'react-bootstrap/';
 import { Route, Routes, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { doLogin, doLogout, checkSession } from './api/auth-api.js';
-import { GameExecutionLayout } from './layouts/GameExecutionLayout.jsx';
+import { getMyBest } from './api/games-api.js'
 import { GameLayout } from './layouts/GameLayout.jsx';
-import { GamePlanningLayout } from './layouts/GamePlanningLayout.jsx';
-import { GameResultLayout } from './layouts/GameResultLayout.jsx';
-import { GameSetupLayout } from './layouts/GameSetupLayout.jsx';
 import { MainLayout } from './layouts/MainLayout.jsx';
 import { HomeLayout } from './layouts/HomeLayout.jsx';
 import { InstructionLayout } from './layouts/InstructionLayout.jsx';
@@ -25,24 +22,26 @@ function App() {
     const [user, setUser] = useState(null);
     const [loggedIn, setLoggedIn] = useState(false);
     const [feedback, setFeedback] = useState('');
+    const [shouldRefresh, setShouldRefresh] = useState(false);
+    const [bestScore, setBestScore] = useState(-1);
 
     const navigate = useNavigate();
     const { state } = useLocation();
 
     const handleLogin = async (email, password) => {
-        try{
+        try {
             const user = await doLogin(email, password);
             setUser(user);
             setLoggedIn(true);
-            setFeedback("Welcome, " + user.name);
+            setShouldRefresh(true);
             navigate(state?.from ?? '/');
         } catch (err) {
             setFeedbackFromError(err);
-        }       
-    };            
+        }
+    };
 
     const handleLogout = async () => {
-        try{
+        try {
             await doLogout();
         } catch (err) {
             setFeedbackFromError(err);
@@ -61,33 +60,40 @@ function App() {
     };
 
     useEffect(() => {
-        checkSession().then(user => {
+        checkSession()
+        .then(user => {
             setUser(user);
             setLoggedIn(true);
-        }).catch(e => {
+        })
+        .catch(e => {
             setUser(null);
             setLoggedIn(false);
         })
     }, [])
 
+    useEffect(() => {
+        getMyBest()
+        .then(game => {
+            setBestScore(game.best_score)
+        })
+        .then(() => setShouldRefresh(false))
+        .catch(e => setBestScore(-1))
+    }, [shouldRefresh])
+
+
     return (<>
         <FeedbackContext.Provider value={{ setFeedback, setFeedbackFromError }}>
             <Container>
                 <Routes>
-                    <Route path='/' element={<MainLayout handleLogout={handleLogout} user={user} loggedIn={loggedIn} />}>
+                    <Route path='/' element={<MainLayout handleLogout={handleLogout} user={user} loggedIn={loggedIn} bestScore={bestScore} />}>
                         <Route index element={<HomeLayout />} />
                         <Route path='login' element={loggedIn ?
                             <Navigate replace to={state?.from ?? '/'} /> :
                             <LoginLayout handleLogin={handleLogin} />
                         } />
                         <Route path="instruction" element={<InstructionLayout />} />
-                        <Route element={<ProtectedRoute loggedIn={loggedIn}/>}>
-                            <Route path='game' element={<GameLayout />}>
-                                <Route path="setup" element={<GameSetupLayout />} />
-                                <Route path="planning" element={<GamePlanningLayout />} />
-                                <Route path="execution" element={<GameExecutionLayout />} />
-                                <Route path="result" element={<GameResultLayout />} />
-                            </Route>
+                        <Route element={<ProtectedRoute loggedIn={loggedIn} />}>
+                            <Route path='game/*' element={<GameLayout setShouldRefresh={setShouldRefresh} />} />
                             <Route path="ranking" element={<RankingLayout />} />
                         </Route>
                         <Route path="*" element={<NotFoundLayout />} />
@@ -110,9 +116,9 @@ function App() {
     </>);
 }
 
-function ProtectedRoute(props){
+function ProtectedRoute(props) {
     const location = useLocation();
-    if(!props.loggedIn) {
+    if (!props.loggedIn) {
         return <Navigate replace to="/login" state={{ from: location.pathname }} />;
     }
 

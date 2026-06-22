@@ -3,12 +3,13 @@ import { handleJSONResponse } from "../services/response-service.js";
 import { GameDTO } from "../models/dto/game-dto.js";
 import { EndpointsDTO } from "../models/dto/endpoints-dto.js";
 import { SegmentDTO } from "../models/dto/segment-dto.js";
+import { EventDTO } from "../models/dto/event-dto.js";
 
 export async function getRanking() {
     return fetch(ROUTES.V1_GAMES + "/ranking", {
         method: 'GET',
         credentials: 'include'
-    }).then(handleJSONResponse).then(response => 
+    }).then(handleJSONResponse).then(response =>
         response.map(game => new GameDTO(game.id, game.user_name, game.best_score))
     )
 }
@@ -35,7 +36,9 @@ export async function executeRoute(route) {
             'Content-Type': 'application/json'
         },
         credentials: 'include'
-    }).then(handleJSONResponse).then(response => 
-        response.map(segment => new SegmentDTO(segment.from_station_id, segment.to_station_id, segment.line_id, segment.event))
-    )
+    }).then(handleJSONResponse).then(response => {
+        const appliedEvents = response.appliedEvents.map(event => new EventDTO(event.id, event.name, event.description, event.effect));
+        const score = response.score;
+        return { appliedEvents, score };
+    })
 }
