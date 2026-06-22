@@ -4,29 +4,38 @@ import { useContext, useState, useEffect } from 'react';
 import GameContext from "../contexts/GameContext.js";
 import FeedbackContext from "../contexts/FeedbackContext.js";
 import { MetroMap } from '../components/MetroMap.jsx';
-import { getEndpoints, executeRoute } from '../api/games-api.js'
+import { getEndpoints } from '../api/games-api.js'
 import { MAX_GAME_DURATION } from "../config/config.js"
 
 export function GamePlanningLayout(props) {
-    const { lines, segments, stations, stationIdToIndex, lineIdToIndex } = useContext(GameContext);
+    const { lines, segments, stations, stationIdToIndex, lineIdToIndex, route, endpoints } = useContext(GameContext);
     const { setFeedbackFromError } = useContext(FeedbackContext);
-    const [route, setRoute] = useState([]);
-    const [endpoints, setEndpoints] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        getEndpoints().then(response => {
-            setEndpoints(response);
-        }).catch(e => {
-            setEndpoints(null);
-            setFeedbackFromError(e);
-        })
-    }, [])
-
-    if (!lines.length || !segments.length || !stations.length || !endpoints) {
+    if (!lines.length || !segments.length || !stations.length) {
         return (
             <>
                 <h3>Loading...</h3>
+            </>
+        );
+    }
+
+    const handleEndpoints = async () => {
+        try {
+            const response = await getEndpoints();
+            props.setEndpoints(response);
+        } catch (err) {
+            props.setEndpoints(null);
+            setFeedbackFromError(err);
+        }
+    };
+
+    if (!endpoints) {
+        return (
+            <>  
+                If you are ready to begin press start otherwise go back and study the map some more.
+                <Button onClick={() => navigate("/game/setup")}>Go back</Button>
+                <Button onClick={() => handleEndpoints()}>Start</Button>
             </>
         );
     }
@@ -54,26 +63,13 @@ export function GamePlanningLayout(props) {
     const departureStationName = stations[stationIdToIndex[endpoints.departure_station_id]].name;
     const arrivalStationName = stations[stationIdToIndex[endpoints.arrival_station_id]].name;
 
-    const handlePlanningFinished = async () => {
-        try {
-            const response = await executeRoute(route);
-            const appliedEvents = response.appliedEvents;
-            const score = response.score;
-            navigate('/game/execution', { state: { route, appliedEvents, score } });
-        } catch (err) {
-            props.setShouldRefresh(true);
-            navigate('/game/result', { state: { err, score: 0 } });
-        }
-
-    };
-
     const handleSegmentSelection = (id) => {
         const segmentIndex = segmentIdToIndex[id];
-        setRoute(prevRoute => [...prevRoute, segments[segmentIndex]]);
+        props.setRoute(prevRoute => [...prevRoute, segments[segmentIndex]]);
     };
 
     const handleSegmentDeselection = (id) => {
-        setRoute(prevRoute => prevRoute.filter(segment => {
+        props.setRoute(prevRoute => prevRoute.filter(segment => {
             return getIdFromSegment(segment) !== id;
         }));
     };
@@ -94,7 +90,7 @@ export function GamePlanningLayout(props) {
                         in
                     </Col>
                     <Col>
-                        <Countdown handlePlanningFinished={handlePlanningFinished} />
+                        <Countdown />
                     </Col>
                 </Row>
                 <SegmentList segments={displaySegments}
@@ -102,7 +98,7 @@ export function GamePlanningLayout(props) {
                     handleSegmentDeselection={handleSegmentDeselection}
                     route={route}
                 />
-                <Button onClick={() => handlePlanningFinished()}>Go next phase</Button>
+                <Button onClick={() => navigate('/game/execution')}>Go next phase</Button>
             </Container>
         </>
     );
@@ -180,12 +176,12 @@ function SegmentInList(props) {
 
 function Countdown(props) {
     const [seconds, setSeconds] = useState(MAX_GAME_DURATION);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const timerId = setInterval(() => {
             setSeconds(prevSeconds => {
                 if (prevSeconds <= 1) {
-                    props.handlePlanningFinished();
                     clearInterval(timerId);
                     return 0;
                 } else {
@@ -196,6 +192,12 @@ function Countdown(props) {
 
         return () => clearInterval(timerId);
     }, [])
+
+    useEffect(() => {
+        if(seconds <= 0) {
+            navigate('/game/execution');
+        }
+    }, [seconds, navigate]);
 
     return (
         <>

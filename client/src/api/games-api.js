@@ -2,7 +2,6 @@ import { ROUTES } from "../config/config.js";
 import { handleJSONResponse } from "../services/response-service.js";
 import { GameDTO } from "../models/dto/game-dto.js";
 import { EndpointsDTO } from "../models/dto/endpoints-dto.js";
-import { SegmentDTO } from "../models/dto/segment-dto.js";
 import { EventDTO } from "../models/dto/event-dto.js";
 
 export async function getRanking() {

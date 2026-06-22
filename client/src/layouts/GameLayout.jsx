@@ -1,5 +1,4 @@
-import { useContext, useState } from 'react';
-import { getLines, getSegments, getStations } from '../api/metro-api.js'
+import { useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Container } from "react-bootstrap/";
 import { GameExecutionLayout } from './GameExecutionLayout.jsx';
@@ -7,32 +6,14 @@ import { GamePlanningLayout } from './GamePlanningLayout.jsx';
 import { GameResultLayout } from './GameResultLayout.jsx';
 import { GameSetupLayout } from './GameSetupLayout.jsx';
 import { NotFoundLayout } from './NotFoundLayout.jsx';
-import FeedbackContext from "../contexts/FeedbackContext.js";
 import GameContext from "../contexts/GameContext.js";
 
 export function GameLayout(props) {
     const [lines, setLines] = useState([]);
     const [segments, setSegments] = useState([]);
     const [stations, setStations] = useState([]);
-    const { setFeedbackFromError } = useContext(FeedbackContext);
-    
-    const startNewGame = async () => {
-        try {
-            const [fetchedLines, fetchedSegments, fetchedStations] = await Promise.all([
-                getLines(),
-                getSegments(),
-                getStations()
-            ]);
-            setLines(fetchedLines);
-            setSegments(fetchedSegments);
-            setStations(fetchedStations);
-        } catch (err) {
-            setLines([]);
-            setSegments([]);
-            setStations([]);
-            setFeedbackFromError(err);
-        }
-    }
+    const [route, setRoute] = useState([]);
+    const [endpoints, setEndpoints] = useState(null);
 
     const stationIdToIndex = {};
     stations.forEach((station, index) => {
@@ -44,15 +25,27 @@ export function GameLayout(props) {
         lineIdToIndex[line.id] = index;
     });
 
+    const resetStates = () => {
+        setLines([]);
+        setSegments([]);
+        setStations([]);
+        setRoute([]);
+        setEndpoints(null);
+    };
+
     return (
         <>
-            <GameContext.Provider value={{ lines, segments, stations, stationIdToIndex, lineIdToIndex }}>
+            <GameContext.Provider value={{ lines, segments, stations, stationIdToIndex, lineIdToIndex, route, endpoints }}>
                 <Container>
                     <Routes>
-                        <Route path="setup" element={<GameSetupLayout startNewGame={startNewGame} />} />
-                        <Route path="planning" element={<GamePlanningLayout setShouldRefresh={props.setShouldRefresh} />} />
-                        <Route path="execution" element={<GameExecutionLayout setShouldRefresh={props.setShouldRefresh} />} />
-                        <Route path="result" element={<GameResultLayout />} />
+                        <Route path="setup" element={<GameSetupLayout
+                            setLines={setLines}
+                            setSegments={setSegments}
+                            setStations={setStations}
+                            resetStates={resetStates} />} />
+                        <Route path="planning" element={<GamePlanningLayout setRoute={setRoute} setEndpoints={setEndpoints} />} />
+                        <Route path="execution" element={<GameExecutionLayout />} />
+                        <Route path="result" element={<GameResultLayout setShouldRefresh={props.setShouldRefresh} />} />
                         <Route path="*" element={<NotFoundLayout />} />
                     </Routes>
                 </Container>
