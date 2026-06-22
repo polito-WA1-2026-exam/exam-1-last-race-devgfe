@@ -33,7 +33,7 @@ export function GameResultLayout(props) {
 
                         <Card className="shadow-lg border-0 rounded-4 text-center p-3 p-md-4">
                             <Card.Body>
-                                {err ?
+                                {err &&
                                     (<>
                                         <Alert variant="danger" className="rounded-4 text-start shadow-sm mb-4">
                                             <Alert.Heading className="fw-bold fs-4 mb-3">
@@ -53,15 +53,15 @@ export function GameResultLayout(props) {
                                             </p>
                                         </Alert>
                                     </>)
-                                    : (<>
-                                        <div className="py-4">
-                                            <h1 className="display-3 fw-bold text-dark mb-4">
-                                                Score: <span className="text-warning">{score}</span>
-                                                <i className="bi bi-coin text-warning ms-3"></i>
-                                            </h1>
-                                        </div>
-                                    </>)
                                 }
+                                <>
+                                    <div className="py-4">
+                                        <h1 className="display-3 fw-bold text-dark mb-4">
+                                            Score: <span className="text-warning">{score}</span>
+                                            <i className="bi bi-coin text-warning ms-3"></i>
+                                        </h1>
+                                    </div>
+                                </>
                                 <div className="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 mt-4">
 
                                     <Button

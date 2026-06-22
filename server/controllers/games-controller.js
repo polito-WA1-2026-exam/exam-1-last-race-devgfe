@@ -63,8 +63,8 @@ function _isValidEndpoints(adjMatrix, currentStationIndex, arrivalStationIndex, 
 
     for (let i = 0; i < stationsToVisit.length; i++) {
         if (stationsToVisit[i] && !stationsVisited.includes(i)) {
-            let endpointsTooClose;
-            ({ endpointsTooClose, routeFound } = _isValidEndpoints(adjMatrix, i, arrivalStationIndex, stationsVisited));
+            const { endpointsTooClose, routeFound: routeFoundReturned } = _isValidEndpoints(adjMatrix, i, arrivalStationIndex, stationsVisited);
+            if (routeFoundReturned) routeFound = true;
             if (endpointsTooClose) return { endpointsTooClose, routeFound }; // Forced return if at least one route found is invalid
         }
     }

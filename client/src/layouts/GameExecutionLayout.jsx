@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Button, Col, Row, Container, Card, Spinner, Alert, Badge, ProgressBar } from 'react-bootstrap';
+import { Button, Col, Row, Container, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { useState, useContext } from 'react';
 import GameContext from "../contexts/GameContext.js";
 import { executeRoute } from '../api/games-api.js';
