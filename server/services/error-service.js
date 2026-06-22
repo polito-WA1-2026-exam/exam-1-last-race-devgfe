@@ -9,7 +9,7 @@ const errorFormatter = ({msg}) => {
 
 export const sendValidationError = (validationResult, res) => {
     const errors = validationResult.formatWith(errorFormatter);
-    const validationError = new ValidationError(errors.mapped());
+    const validationError = new ValidationError(errors.array().join(" - "));
     return sendAppError(validationError, res);
 };
 
