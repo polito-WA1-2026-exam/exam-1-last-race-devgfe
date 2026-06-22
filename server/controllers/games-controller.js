@@ -91,18 +91,18 @@ export const getEndpoints = async () => {
 };
 
 export const executeRoute = async (gameData, route, user_id) => {
+    // Start checks
+    if (user_id == null) throw new UnauthorizedError("The user who sent the route is invalid");
+    if (gameData == null) throw new NotFoundError("No active games found");
+
     const { stationIdToIndex, adjMatrix } = await getAdjMatrix();
     const events = await listEvents();
 
-    // Start checks
-    if (user_id == null) throw new UnauthorizedError("The user who sent the route is invalid");
-
     try {
-        if (gameData == null) throw new InvalidRouteError("No active games found");
         if (route == null) throw new InvalidRouteError("A null route was passed");
 
         const duration = dayjs().unix() - gameData.startTime;
-        if (duration > MAX_GAME_DURATION + MAX_DATA_SENDING_DELAY) throw new InvalidRouteError("Took too long to create the route");
+        //if (duration > MAX_GAME_DURATION + MAX_DATA_SENDING_DELAY) throw new InvalidRouteError("Took too long to create the route");
 
         if (route.length < MIN_DISTANCE_SEGMENT) throw new InvalidRouteError("Selected route too short");
 
