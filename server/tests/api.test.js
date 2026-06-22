@@ -5,7 +5,7 @@ import { ROUTES } from "../config/config.js";
 
 describe("API Without login", () => {
     it("", async () => {
-        const res = await request(app).get(ROUTES.V1_EVENTS)
+        const res = await request(app).get(ROUTES.V1_GAMES + "/ranking")
             .expect("Content-Type", /json/)
             .expect(401);
 

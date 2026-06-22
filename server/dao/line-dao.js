@@ -3,7 +3,7 @@ import { Line } from "../models/entities/line.js";
 
 export const listLines = () => {
   return new Promise((resolve, reject) => {
-    const sql = "SELECT * FROM line";
+    const sql = "SELECT * FROM line ORDER BY id";
     db.all(sql, [], (err, rows) => {
       if(err){
         reject(err);

@@ -3,7 +3,7 @@ import { Station } from "../models/entities/station.js";
 
 export const listStations = () => {
   return new Promise((resolve, reject) => {
-    const sql = "SELECT * FROM station";
+    const sql = "SELECT * FROM station ORDER BY id";
     db.all(sql, [], (err, rows) => {
       if(err){
         reject(err);
